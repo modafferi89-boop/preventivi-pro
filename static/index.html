@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventivi Pro - Gestionale SaaS</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans text-gray-900 min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar Superiore -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg shadow">
+                    <i class="fa-solid fa-file-invoice-dollar text-xl"></i>
+                </div>
+                <h1 class="text-xl font-bold text-indigo-900">Preventivi Pro <span class="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full uppercase tracking-wide">SaaS</span></h1>
+            </div>
+            
+            <div id="user-info-section" class="hidden flex items-center space-x-4">
+                <div class="text-right hidden sm:block">
+                    <p id="nav-professionista" class="text-sm font-semibold text-gray-800"></p>
+                    <p id="nav-trial" class="text-xs text-amber-600 font-medium"></p>
+                </div>
+                <button onclick="apriCheckoutStripe()" class="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow transition">
+                    <i class="fa-solid fa-crown mr-1"></i> Passa a PRO
+                </button>
+                <button onclick="logout()" class="text-gray-500 hover:text-red-600 text-sm p-2 transition" title="Esci">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Contenuto Principale -->
+    <main class="max-w-7xl mx-auto px-4 py-8 flex-grow w-full">
+
+        <!-- Sezione Autenticazione (Login / Registrazione) -->
+        <div id="auth-container" class="max-w-md mx-auto bg-white rounded-xl shadow-lg border border-gray-100 p-8 my-12">
+            <div class="text-center mb-6">
+                <h2 id="auth-title" class="text-2xl font-bold text-gray-800">Accedi a Preventivi Pro</h2>
+                <p id="auth-subtitle" class="text-sm text-gray-500 mt-1">Gestisci e genera preventivi professionali in un click</p>
+            </div>
+
+            <!-- Tab Switcher -->
+            <div class="flex rounded-lg bg-gray-100 p-1 mb-6">
+                <button id="tab-login-btn" onclick="mostraLogin()" class="flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow-sm text-indigo-600 transition">Accedi</button>
+                <button id="tab-register-btn" onclick="mostraRegistrazione()" class="flex-1 py-2 text-sm font-semibold rounded-md text-gray-500 transition">Registrati (15gg Trial)</button>
+            </div>
+
+            <!-- Form di Login -->
+            <form id="form-login" onsubmit="gestisciLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Username</label>
+                    <input type="text" id="login-username" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow transition">Accedi</button>
+            </form>
+
+            <!-- Form di Registrazione -->
+            <form id="form-register" onsubmit="gestisciRegistrazione(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Username</label>
+                    <input type="text" id="reg-username" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Password (min 6 caratteri)</label>
+                    <input type="password" id="reg-password" required minlength="6" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Nome Professionista / Azienda</label>
+                    <input type="text" id="reg-professionista" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Es. Mario Rossi Studio">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Partita IVA</label>
+                        <input type="text" id="reg-piva" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Recapito / Tel</label>
+                        <input type="text" id="reg-recapito" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Email</label>
+                    <input type="email" id="reg-email" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow transition">Crea Account Gratuito</button>
+            </form>
+            <div id="auth-error" class="mt-4 text-center text-xs text-red-600 font-medium hidden"></div>
+        </div>
+
+        <!-- Sezione Dashboard App (Nascosta finché non si effettua il login) -->
+        <div id="app-dashboard" class="hidden space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Form Creazione Preventivo -->
+                <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b flex items-center">
+                        <i class="fa-solid fa-calculator text-indigo-600 mr-2"></i> Nuovo Preventivo Professionale
+                    </h3>
+                    
+                    <form id="form-preventivo" onsubmit="generaPreventivo(event)" class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Cliente / Committente</label>
+                                <input type="text" id="p-cliente" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Nome Azienda o Cliente">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Nome Progetto / Servizio</label>
+                                <input type="text" id="p-progetto" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" placeholder="Es. Sviluppo Sito Web">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Data Preventivo</label>
+                                <input type="date" id="p-data" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Validità</label>
+                                <input type="text" id="p-validita" value="15 giorni dalla data" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Ore di Lavoro</label>
+                                <input type="number" id="p-ore" step="0.5" min="0" required value="10" class="w-full px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Costo Orario (€)</label>
+                                <input type="number" id="p-costo" step="1" min="0" required value="35" class="w-full px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase text-gray-600 mb-1">Sconto (%)</label>
+                                <input type="number" id="p-sconto" step="0.1" min="0" max="100" value="0" class="w-full px-3 py-2 bg-white border rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            </div>
+                        </div>
+
+                        <!-- Voci Extra Dinamiche -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="text-xs font-semibold uppercase text-gray-600">Voci di Spesa Extra / Materiali</label>
+                                <button type="button" onclick="aggiungiVoceExtra()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center">
+                                    <i class="fa-solid fa-plus mr-1"></i> Aggiungi Voce
+                                </button>
+                            </div>
+                            <div id="voci-extra-container" class="space-y-2">
+                                <div class="flex gap-2 items-center">
+                                    <input type="text" placeholder="Descrizione spesa" class="voce-desc flex-1 px-3 py-1.5 border rounded-lg text-sm">
+                                    <input type="number" step="0.01" placeholder="Importo €" class="voce-imp w-32 px-3 py-1.5 border rounded-lg text-sm">
+                                    <button type="button" onclick="rimuoviVoce(this)" class="text-red-500 hover:text-red-700 px-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg shadow-md transition flex items-center justify-center">
+                            <i class="fa-solid fa-file-pdf mr-2"></i> Genera e Scarica Preventivo PDF
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Storico Preventivi -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex flex-col">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4 pb-2 border-b flex items-center justify-between">
+                        <span><i class="fa-solid fa-history text-indigo-600 mr-2"></i> Storico</span>
+                        <button onclick="caricaPreventivi()" class="text-xs text-gray-500 hover:text-indigo-600"><i class="fa-solid fa-rotate"></i></button>
+                    </h3>
+                    
+                    <div id="storico-container" class="space-y-3 overflow-y-auto max-h-[500px] flex-grow pr-1">
+                        <p class="text-sm text-gray-400 text-center py-8">Nessun preventivo recente.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 py-4 text-center text-xs text-gray-500">
+        Preventivi Pro &copy; 2026 - Tutti i diritti riservati
+    </footer>
+
+    <!-- Script JavaScript -->
+    <script>
+        let token = localStorage.getItem('token') || '';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const oggi = new Date().toISOString().split('T')[0];
+            const dataInput = document.getElementById('p-data');
+            if(dataInput) dataInput.value = oggi;
+
+            if (token) {
+                verificaTokenEcarica();
+            }
+        });
+
+        function mostraLogin() {
+            document.getElementById('form-login').classList.remove('hidden');
+            document.getElementById('form-register').classList.add('hidden');
+            document.getElementById('tab-login-btn').className = "flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow-sm text-indigo-600 transition";
+            document.getElementById('tab-register-btn').className = "flex-1 py-2 text-sm font-semibold rounded-md text-gray-500 transition";
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        function mostraRegistrazione() {
+            document.getElementById('form-register').classList.remove('hidden');
+            document.getElementById('form-login').classList.add('hidden');
+            document.getElementById('tab-register-btn').className = "flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow-sm text-emerald-600 transition";
+            document.getElementById('tab-login-btn').className = "flex-1 py-2 text-sm font-semibold rounded-md text-gray-500 transition";
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        async function gestisciLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore durante il login");
+
+                token = data.access_token;
+                localStorage.setItem('token', token);
+                mostraDashboard(data.professionista, data.days_left);
+            } catch (err) {
+                mostraErroreAuth(err.message);
+            }
+        }
+
+        async function gestisciRegistrazione(event) {
+            event.preventDefault();
+            const payload = {
+                username: document.getElementById('reg-username').value,
+                password: document.getElementById('reg-password').value,
+                professionista: document.getElementById('reg-professionista').value,
+                partita_iva: document.getElementById('reg-piva').value,
+                recapito: document.getElementById('reg-recapito').value,
+                email: document.getElementById('reg-email').value
+            };
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore di registrazione");
+
+                alert("Registrazione completata con successo! Ora puoi effettuare il login.");
+                mostraLogin();
+            } catch (err) {
+                mostraErroreAuth(err.message);
+            }
+        }
+
+        async function verificaTokenEcarica() {
+            try {
+                const res = await fetch('/api/user/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Sessione scaduta");
+                const user = await res.json();
+                mostraDashboard(user.professionista, user.days_left);
+            } catch (err) {
+                logout();
+            }
+        }
+
+        function mostraDashboard(professionista, days_left) {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-dashboard').classList.remove('hidden');
+            document.getElementById('user-info-section').classList.remove('hidden');
+            document.getElementById('nav-professionista').innerText = professionista;
+            document.getElementById('nav-trial').innerText = `Trial: ${days_left} giorni rimanenti`;
+            caricaPreventivi();
+        }
+
+        function logout() {
+            token = '';
+            localStorage.removeItem('token');
+            document.getElementById('app-dashboard').classList.add('hidden');
+            document.getElementById('user-info-section').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+            mostraLogin();
+        }
+
+        function mostraErroreAuth(msg) {
+            const errDiv = document.getElementById('auth-error');
+            errDiv.innerText = msg;
+            errDiv.classList.remove('hidden');
+        }
+
+        function aggiungiVoceExtra() {
+            const container = document.getElementById('voci-extra-container');
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center";
+            div.innerHTML = `
+                <input type="text" placeholder="Descrizione spesa" class="voce-desc flex-1 px-3 py-1.5 border rounded-lg text-sm">
+                <input type="number" step="0.01" placeholder="Importo €" class="voce-imp w-32 px-3 py-1.5 border rounded-lg text-sm">
+                <button type="button" onclick="rimuoviVoce(this)" class="text-red-500 hover:text-red-700 px-2"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function rimuoviVoce(btn) {
+            const container = document.getElementById('voci-extra-container');
+            if(container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                alert("Deve esserci almeno una riga di voce extra.");
+            }
+        }
+
+        async function caricaPreventivi() {
+            try {
+                const res = await fetch('/api/preventivi', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if(!res.ok) return;
+                const list = await res.json();
+                const container = document.getElementById('storico-container');
+                
+                if(list.length === 0) {
+                    container.innerHTML = `<p class="text-sm text-gray-400 text-center py-8">Nessun preventivo recente.</p>`;
+                    return;
+                }
+
+                container.innerHTML = list.map(p => `
+                    <div class="p-3 bg-gray-50 border rounded-lg flex justify-between items-center text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-800">${p.cliente} - <span class="text-indigo-600">${p.progetto}</span></p>
+                            <p class="text-xs text-gray-500">${p.data_creazione} | Totale: <strong class="text-gray-700">€ ${p.totale_finale.toFixed(2)}</strong></p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <a href="${p.pdf_url}" target="_blank" class="text-indigo-600 hover:text-indigo-800 p-1.5 bg-indigo-50 rounded-md" title="Apri PDF"><i class="fa-solid fa-file-pdf"></i></a>
+                            <button onclick="eliminaPreventivo('${p.id}')" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 rounded-md" title="Elimina"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error("Errore caricamento storico", err);
+            }
+        }
+
+        async function eliminaPreventivo(id) {
+            if(!confirm("Vuoi davvero eliminare questo preventivo?")) return;
+            try {
+                const res = await fetch(`/api/preventivi/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if(!res.ok) throw new Error("Errore durante l'eliminazione");
+                caricaPreventivi();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function generaPreventivo(event) {
+            event.preventDefault();
+            const vociExtra = [];
+            document.querySelectorAll('#voci-extra-container > div').forEach(row => {
+                const desc = row.querySelector('.voce-desc').value.trim();
+                const imp = row.querySelector('.voce-imp').value.trim();
+                if(desc && imp) {
+                    vociExtra.push({ descrizione: desc, importo: parseFloat(imp) });
+                }
+            });
+
+            const payload = {
+                cliente: document.getElementById('p-cliente').value,
+                progetto: document.getElementById('p-progetto').value,
+                data: document.getElementById('p-data').value,
+                validita: document.getElementById('p-validita').value,
+                ore_lavoro: parseFloat(document.getElementById('p-ore').value),
+                costo_orario: parseFloat(document.getElementById('p-costo').value),
+                sconto_percentuale: parseFloat(document.getElementById('p-sconto').value) || 0.0,
+                voci_extra: vociExtra
+            };
+
+            try {
+                let res = await fetch('/api/calcola', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                let data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore nella generazione");
+
+                const pdfAbsoluteUrl = window.location.origin + data.pdf_url;
+                window.open(pdfAbsoluteUrl, '_blank');
+
+                caricaPreventivi();
+                document.getElementById('form-preventivo').reset();
+                document.getElementById('voci-extra-container').innerHTML = `
+                    <div class="flex gap-2 items-center">
+                        <input type="text" placeholder="Descrizione spesa" class="voce-desc flex-1 px-3 py-1.5 border rounded-lg text-sm">
+                        <input type="number" step="0.01" placeholder="Importo €" class="voce-imp w-32 px-3 py-1.5 border rounded-lg text-sm">
+                        <button type="button" onclick="rimuoviVoce(this)" class="text-red-500 hover:text-red-700 px-2"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+                document.getElementById('p-data').value = new Date().toISOString().split('T')[0];
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function apriCheckoutStripe() {
+            try {
+                const res = await fetch('/api/crea-sessione-checkout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if(!res.ok) throw new Error(data.detail || "Errore checkout");
+                window.location.href = data.url;
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    </script>
+</body>
+</html>

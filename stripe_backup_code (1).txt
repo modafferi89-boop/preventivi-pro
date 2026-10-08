@@ -1,0 +1,3 @@
+Prima di inserire il codice accertati sempre di essere su dashboard.stripe.com e non condividerlo mai con nessuno (nemmeno con l'assistenza Stripe o i dipendenti Stripe).
+
+Il tuo codice è: wsir-jzos-ivly-yqpn-zmyp

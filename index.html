@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventivi Pro - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Libreria DOMPurify per la sanitizzazione anti-XSS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.8/purify.min.js"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+    <!-- Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white font-black p-2 rounded-xl text-lg">P</div>
+                <span class="font-extrabold text-xl tracking-tight text-slate-900">Preventivi<span class="text-blue-600">Pro</span></span>
+            </div>
+            <div id="user-info" class="hidden flex items-center space-x-4">
+                <span id="welcome-text" class="text-xs sm:text-sm font-semibold text-slate-600"></span>
+                <span id="trial-badge" class="hidden sm:inline-block bg-amber-50 text-amber-700 border border-amber-200 text-xs px-2.5 py-1 rounded-full font-bold"></span>
+                <button onclick="pagaStripe()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm">Passa a PRO</button>
+                <button onclick="logout()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-semibold transition">Esci</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+
+        <!-- Autenticazione Container (Login / Register) -->
+        <div id="auth-container" class="max-w-md mx-auto bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+            <div class="flex border-b border-slate-100 mb-6">
+                <button id="tab-login" onclick="mostraTab('login')" class="w-1/2 pb-3 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition">Accedi</button>
+                <button id="tab-register" onclick="mostraTab('register')" class="w-1/2 pb-3 font-semibold text-slate-400 border-b-2 border-transparent text-sm transition">Registrati</button>
+            </div>
+
+            <!-- Form Login -->
+            <form id="form-login" onsubmit="eseguiLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Username</label>
+                    <input type="text" id="login-username" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Accedi</button>
+            </form>
+
+            <!-- Form Registrazione -->
+            <form id="form-register" onsubmit="eseguiRegistrazione(event)" class="space-y-4 hidden">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Username</label>
+                    <input type="text" id="reg-username" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Password (min 6 caratteri)</label>
+                    <input type="password" id="reg-password" required minlength="6" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Nome Professionista / Azienda</label>
+                    <input type="text" id="reg-professionista" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Partita IVA</label>
+                        <input type="text" id="reg-piva" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Telefono / Recapito</label>
+                        <input type="text" id="reg-recapito" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Email</label>
+                    <input type="email" id="reg-email" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-emerald-600/20">Registrati e prova gratis</button>
+            </form>
+
+            <div id="auth-error" class="mt-4 text-red-500 text-xs font-semibold text-center hidden"></div>
+        </div>
+
+        <!-- Dashboard Protetta -->
+        <div id="dashboard-container" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Form Creazione Preventivo -->
+            <section class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Nuovo Preventivo</h2>
+                
+                <form id="form-preventivo" onsubmit="generaPreventivo(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Cliente</label>
+                        <input type="text" id="p-cliente" required placeholder="Nome o Azienda cliente" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Progetto / Descrizione</label>
+                        <input type="text" id="p-progetto" required placeholder="Es. Sviluppo Sito Web e-commerce" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Data</label>
+                            <input type="text" id="p-data" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Validità</label>
+                            <input type="text" id="p-validita" value="15 giorni dalla data" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Ore Lavoro</label>
+                            <input type="number" id="p-ore" step="0.5" required min="0" placeholder="Es. 10" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Costo Orario (€)</label>
+                            <input type="number" id="p-costo" step="1" required min="0" placeholder="Es. 35" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">Sconto Percentuale (%)</label>
+                        <input type="number" id="p-sconto" step="0.1" min="0" max="100" value="0" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                    </div>
+
+                    <!-- Sezione Voci Extra -->
+                    <div class="border-t border-slate-100 pt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-500">Voci di Spesa Extra</label>
+                            <button type="button" onclick="aggiungiVoceExtra()" class="text-blue-600 hover:text-blue-700 text-xs font-bold">+ Aggiungi</button>
+                        </div>
+                        <div id="voci-extra-container" class="space-y-2">
+                            <!-- Prima voce extra predefinita e compilabile -->
+                            <div class="flex items-center space-x-2">
+                                <input type="text" placeholder="Descrizione spesa" class="voce-desc w-2/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                                <input type="number" step="0.1" placeholder="Importo €" class="voce-imp w-1/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 font-bold px-2">&times;</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-sm transition shadow-lg shadow-blue-600/20">Genera Preventivo PDF</button>
+                </form>
+            </section>
+
+            <!-- Storico Preventivi -->
+            <section class="lg:col-span-2 space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <h2 class="text-lg font-bold text-slate-900">Storico Preventivi</h2>
+                        <!-- Input Filtro Cliente -->
+                        <div class="w-full sm:w-72">
+                            <input type="text" id="filtro-cliente" oninput="filtraPreventivi()" placeholder="Filtra per cliente o progetto..." class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                        </div>
+                    </div>
+                    <div id="preventivi-lista" class="space-y-3">
+                        <p class="text-sm text-slate-400">Caricamento preventivi...</p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-400">
+        Preventivi Pro &copy; 2026 - Tutti i diritti riservati
+    </footer>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let tuttiIPreventivi = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // Imposta la data odierna di default nel form
+            const oggi = new Date().toISOString().split('T')[0];
+            const campoData = document.getElementById('p-data');
+            if(campoData) campoData.value = oggi;
+
+            if (token) {
+                verificaUtente();
+            }
+        });
+
+        function mostraTab(tab) {
+            const isLogin = tab === 'login';
+            document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+            document.getElementById('form-register').classList.toggle('hidden', isLogin);
+            document.getElementById('tab-login').className = isLogin ? "w-1/2 pb-3 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition" : "w-1/2 pb-3 font-semibold text-slate-400 border-b-2 border-transparent text-sm transition";
+            document.getElementById('tab-register').className = !isLogin ? "w-1/2 pb-3 font-bold text-blue-600 border-b-2 border-blue-600 text-sm transition" : "w-1/2 pb-3 font-semibold text-slate-400 border-b-2 border-transparent text-sm transition";
+            document.getElementById('auth-error').classList.add('hidden');
+        }
+
+        async function eseguiLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            const formData = new URLSearchParams();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            try {
+                let res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                let data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore di login");
+
+                localStorage.setItem('token', data.access_token);
+                token = data.access_token;
+                verificaUtente();
+            } catch (err) {
+                mostraErroreAuth(err.message);
+            }
+        }
+
+        async function eseguiRegistrazione(event) {
+            event.preventDefault();
+            const payload = {
+                username: document.getElementById('reg-username').value,
+                password: document.getElementById('reg-password').value,
+                professionista: document.getElementById('reg-professionista').value,
+                partita_iva: document.getElementById('reg-piva').value,
+                recapito: document.getElementById('reg-recapito').value,
+                email: document.getElementById('reg-email').value
+            };
+
+            try {
+                let res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                let data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore di registrazione");
+
+                alert("Registrazione completata! Ora puoi effettuare il login.");
+                mostraTab('login');
+                document.getElementById('login-username').value = payload.username;
+            } catch (err) {
+                mostraErroreAuth(err.message);
+            }
+        }
+
+        function mostraErroreAuth(msg) {
+            const errDiv = document.getElementById('auth-error');
+            errDiv.textContent = msg;
+            errDiv.classList.remove('hidden');
+        }
+
+        async function verificaUtente() {
+            try {
+                let res = await fetch('/api/user/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Sessione scaduta");
+                let user = await res.json();
+
+                document.getElementById('auth-container').classList.add('hidden');
+                document.getElementById('dashboard-container').classList.remove('hidden');
+                document.getElementById('user-info').classList.remove('hidden');
+                document.getElementById('welcome-text').textContent = `Benvenuto, ${user.professionista}`;
+                
+                const badge = document.getElementById('trial-badge');
+                if (user.days_left > 0) {
+                    badge.textContent = `Trial: ${user.days_left} giorni rimasti`;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.textContent = `Trial Scaduto`;
+                    badge.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+                    badge.classList.remove('hidden');
+                }
+
+                caricaPreventivi();
+            } catch (err) {
+                logout();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            token = null;
+            document.getElementById('auth-container').classList.remove('hidden');
+            document.getElementById('dashboard-container').classList.add('hidden');
+            document.getElementById('user-info').classList.add('hidden');
+        }
+
+        async function pagaStripe() {
+            try {
+                let res = await fetch('/api/crea-sessione-checkout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                let data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert("Errore nella creazione della sessione di pagamento.");
+                }
+            } catch (err) {
+                alert("Errore di rete con Stripe.");
+            }
+        }
+
+        function aggiungiVoceExtra() {
+            const container = document.getElementById('voci-extra-container');
+            const div = document.createElement('div');
+            div.className = "flex items-center space-x-2";
+            div.innerHTML = `
+                <input type="text" placeholder="Descrizione spesa" class="voce-desc w-2/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                <input type="number" step="0.1" placeholder="Importo €" class="voce-imp w-1/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 font-bold px-2">&times;</button>
+            `;
+            container.appendChild(div);
+        }
+
+        async function generaPreventivo(event) {
+            event.preventDefault();
+            
+            const vociExtra = [];
+            document.querySelectorAll('#voci-extra-container > div').forEach(row => {
+                const desc = row.querySelector('.voce-desc').value.trim();
+                const imp = row.querySelector('.voce-imp').value.trim();
+                if(desc && imp) {
+                    vociExtra.push({ descrizione: desc, importo: parseFloat(imp) });
+                }
+            });
+
+            const payload = {
+                cliente: document.getElementById('p-cliente').value,
+                progetto: document.getElementById('p-progetto').value,
+                data: document.getElementById('p-data').value,
+                validita: document.getElementById('p-validita').value,
+                ore_lavoro: parseFloat(document.getElementById('p-ore').value),
+                costo_orario: parseFloat(document.getElementById('p-costo').value),
+                sconto_percentuale: parseFloat(document.getElementById('p-sconto').value) || 0.0,
+                voci_extra: vociExtra
+            };
+
+            try {
+                let res = await fetch('/api/calcola', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                let data = await res.json();
+                if (!res.ok) throw new Error(data.detail || "Errore nella generazione");
+
+                window.open(data.pdf_url, '_blank');
+                caricaPreventivi();
+                document.getElementById('form-preventivo').reset();
+                
+                // Ripristina la prima riga vuota delle voci extra e la data odierna dopo il reset del form
+                document.getElementById('voci-extra-container').innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <input type="text" placeholder="Descrizione spesa" class="voce-desc w-2/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                        <input type="number" step="0.1" placeholder="Importo €" class="voce-imp w-1/3 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs focus:bg-white focus:outline-none">
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 font-bold px-2">&times;</button>
+                    </div>
+                `;
+                document.getElementById('p-data').value = new Date().toISOString().split('T')[0];
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function caricaPreventivi() {
+            try {
+                let res = await fetch('/api/preventivi', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) return;
+                tuttiIPreventivi = await res.json();
+                mostraPreventivi(tuttiIPreventivi);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function mostraPreventivi(preventivi) {
+            let listaDiv = document.getElementById('preventivi-lista');
+            
+            if (preventivi.length === 0) {
+                listaDiv.innerHTML = `<p class="text-sm text-slate-400 py-4 text-center">Nessun preventivo trovato.</p>`;
+                return;
+            }
+
+            listaDiv.innerHTML = preventivi.map((p, index) => {
+                // 🛡️ Sanitizzazione anti-XSS con DOMPurify sui campi dinamici inseriti dall'utente
+                const clienteSicuro = DOMPurify.sanitize(p.cliente);
+                const progettoSicuro = DOMPurify.sanitize(p.progetto);
+                const dataCreazioneSicura = DOMPurify.sanitize(p.data_creazione);
+                const pdfUrlSicuro = DOMPurify.sanitize(p.pdf_url);
+                const idSicuro = DOMPurify.sanitize(String(p.id));
+
+                return `
+                    <div class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/60 transition text-sm">
+                        <div class="flex items-center space-x-3">
+                            <span class="flex items-center justify-center bg-slate-200 text-slate-600 font-bold text-xs w-6 h-6 rounded-full shrink-0">${index + 1}</span>
+                            <div>
+                                <span class="font-bold text-slate-900">${clienteSicuro}</span> 
+                                <span class="text-slate-400 mx-2">•</span> 
+                                <span class="text-slate-600 font-medium">${progettoSicuro}</span>
+                                <div class="text-xs text-slate-400 mt-0.5">Creato il ${dataCreazioneSicura}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold text-blue-600 text-base">€ ${p.totale_finale.toFixed(2)}</span>
+                            <a href="${pdfUrlSicuro}" target="_blank" class="bg-white hover:bg-blue-50 border border-slate-200 text-slate-700 hover:text-blue-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition shadow-sm">Apri PDF</a>
+                            <button onclick="eliminaPreventivo('${idSicuro}')" class="bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition">Elimina</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filtraPreventivi() {
+            const query = document.getElementById('filtro-cliente').value.toLowerCase();
+            const filtrati = tuttiIPreventivi.filter(p => 
+                p.cliente.toLowerCase().includes(query) || 
+                p.progetto.toLowerCase().includes(query)
+            );
+            mostraPreventivi(filtrati);
+        }
+
+        async function eliminaPreventivo(id) {
+            if (!confirm("Sei sicuro di voler eliminare questo preventivo?")) return;
+
+            try {
+                let res = await fetch(`/api/preventivi/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Errore durante l'eliminazione");
+                caricaPreventivi();
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+    </script>
+</body>
+</html>

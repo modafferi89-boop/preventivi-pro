@@ -1,0 +1,9 @@
+{
+  "appId": "com.vincenzomodafferi.preventivipro",
+  "appName": "Preventivi Pro",
+  "webDir": "static",
+  "server": {
+    "url": "https://preventivi-pro.onrender.com",
+    "cleartext": true
+  }
+}
