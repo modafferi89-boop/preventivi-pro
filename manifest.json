@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Preventivi Pro",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Preventivi",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "/",
+  "description": "Generatore di preventivi professionali"
+}
